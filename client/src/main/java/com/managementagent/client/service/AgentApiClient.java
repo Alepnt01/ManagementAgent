@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * REST client that communicates with the Management Agent server.
+ * Client REST che dialoga con il server Management Agent.
  */
 public class AgentApiClient {
 
@@ -32,17 +32,22 @@ public class AgentApiClient {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private final HttpClient httpClient;
+    // Esecutore dedicato al parsing JSON per non bloccare il thread JavaFX.
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     public AgentApiClient(String baseUrl) {
+        // Base URL del server remoto, ad esempio http://localhost:7070.
         this.baseUrl = baseUrl;
         this.httpClient = HttpClient.newBuilder()
+                // Utilizzo HTTP/1.1 per massima compatibilità.
                 .version(HttpClient.Version.HTTP_1_1)
+                // Timeout breve per evitare attese infinite durante le connessioni.
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
     }
 
     public CompletableFuture<List<AgentPayload>> loadAgents() {
+        // Richiede tutti gli agenti disponibili al server.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/agents"))
                 .GET()
@@ -53,6 +58,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<AgentPayload> createAgent(AgentPayload payload) {
+        // Invio POST per creare un nuovo agente persistente.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/agents"))
                 .header("Content-Type", "application/json")
@@ -63,6 +69,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<AgentPayload> updateAgent(long id, AgentPayload payload) {
+        // Aggiorna un agente esistente tramite chiamata PUT.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/agents/" + id))
                 .header("Content-Type", "application/json")
@@ -73,6 +80,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<Void> deleteAgent(long id) {
+        // Elimina un agente sfruttando il verbo HTTP DELETE.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/agents/" + id))
                 .DELETE()
@@ -83,6 +91,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<List<TeamPayload>> loadTeams() {
+        // Recupera i team per popolare le viste collaborative.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/collaboration/teams"))
                 .GET()
@@ -93,6 +102,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<List<EmployeePayload>> loadEmployees() {
+        // Scarica i dipendenti che possono partecipare alle chat.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/collaboration/employees"))
                 .GET()
@@ -103,6 +113,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<List<ClientContactPayload>> loadClients() {
+        // Ottiene i contatti dei clienti gestiti dagli agenti.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/collaboration/clients"))
                 .GET()
@@ -113,6 +124,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<List<ChatMessagePayload>> loadChatMessages(long teamId) {
+        // Recupera i messaggi di chat per il team specificato.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/collaboration/teams/" + teamId + "/messages"))
                 .GET()
@@ -123,6 +135,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<ChatMessagePayload> sendChatMessage(long teamId, ChatMessagePayload payload) {
+        // Spedisce un nuovo messaggio nella chat REST del team.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/collaboration/teams/" + teamId + "/messages"))
                 .header("Content-Type", "application/json")
@@ -133,6 +146,7 @@ public class AgentApiClient {
     }
 
     public CompletableFuture<Void> sendEmail(EmailRequestPayload payload) {
+        // Inoltra una richiesta di invio email al server.
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/communications/email"))
                 .header("Content-Type", "application/json")
@@ -145,6 +159,7 @@ public class AgentApiClient {
 
     private <T> T readValue(String json, Class<T> clazz) {
         try {
+            // Deserializza il JSON in una classe specifica.
             return objectMapper.readValue(json, clazz);
         } catch (Exception e) {
             throw new IllegalStateException("Unable to parse response", e);
@@ -153,6 +168,7 @@ public class AgentApiClient {
 
     private <T> T readValue(String json, TypeReference<T> reference) {
         try {
+            // Deserializza il JSON utilizzando un TypeReference per strutture generiche.
             return objectMapper.readValue(json, reference);
         } catch (Exception e) {
             throw new IllegalStateException("Unable to parse response", e);
@@ -161,6 +177,7 @@ public class AgentApiClient {
 
     private String writeValue(Object payload) {
         try {
+            // Serializza il payload Java in una stringa JSON.
             return objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
             throw new IllegalStateException("Unable to serialize payload", e);

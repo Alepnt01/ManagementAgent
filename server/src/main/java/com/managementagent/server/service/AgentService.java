@@ -13,30 +13,35 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Service layer orchestrating DAO calls and async processing.
+ * Servizio applicativo che orchestra le chiamate ai DAO e gestisce l'elaborazione asincrona.
  */
 public class AgentService {
 
     private final AgentDAO agentDAO;
     private final AgentFactory agentFactory;
     private final AgentEventPublisher eventPublisher;
+    // Pool di thread dedicato alle operazioni non bloccanti sugli agenti.
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     public AgentService(AgentDAO agentDAO, AgentFactory agentFactory, AgentEventPublisher eventPublisher) {
+        // Inietto le dipendenze principali tramite il costruttore per mantenere l'approccio OO.
         this.agentDAO = agentDAO;
         this.agentFactory = agentFactory;
         this.eventPublisher = eventPublisher;
     }
 
     public CompletableFuture<List<Agent>> getAllAgentsAsync() {
+        // Recupera tutti gli agenti senza bloccare il thread chiamante.
         return CompletableFuture.supplyAsync(agentDAO::findAll, executorService);
     }
 
     public CompletableFuture<Optional<Agent>> getAgentByIdAsync(long id) {
+        // Carica un singolo agente per id sfruttando il pool asincrono.
         return CompletableFuture.supplyAsync(() -> agentDAO.findById(id), executorService);
     }
 
     public CompletableFuture<Agent> createAgentAsync(AgentRequest request) {
+        // Crea un nuovo agente e notifica gli observer dopo la persistenza.
         return CompletableFuture.supplyAsync(() -> {
             Agent agent = agentFactory.createAgent(request);
             Agent saved = agentDAO.save(agent);
@@ -46,6 +51,7 @@ public class AgentService {
     }
 
     public CompletableFuture<Optional<Agent>> updateAgentAsync(long id, AgentRequest request) {
+        // Aggiorna le informazioni di un agente esistente e invia l'evento di modifica.
         return CompletableFuture.supplyAsync(() -> agentDAO.findById(id).map(existing -> {
             existing.setCode(request.getCode());
             existing.setName(request.getName());
@@ -60,6 +66,7 @@ public class AgentService {
     }
 
     public CompletableFuture<Boolean> deleteAgentAsync(long id) {
+        // Elimina l'agente se presente e propaga l'evento di cancellazione.
         return CompletableFuture.supplyAsync(() -> {
             Optional<Agent> agent = agentDAO.findById(id);
             agent.ifPresent(a -> {
@@ -71,6 +78,7 @@ public class AgentService {
     }
 
     public void shutdown() {
+        // Spegne il pool di thread quando il server viene arrestato.
         executorService.shutdown();
     }
 }

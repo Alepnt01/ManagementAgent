@@ -19,6 +19,9 @@ import javafx.scene.layout.HBox;
 
 import java.util.Optional;
 
+/**
+ * Vista JavaFX per gestire la chat tra membri dello stesso team.
+ */
 public class TeamChatView {
 
     private final BorderPane root = new BorderPane();
@@ -28,14 +31,17 @@ public class TeamChatView {
     private final TextArea messageArea = new TextArea();
 
     public TeamChatView(CollaborationController controller) {
+        // Configura l'interfaccia grafica e la collega al controller di collaborazione.
         root.setPadding(new Insets(16));
 
         GridPane header = new GridPane();
         header.setHgap(8);
         header.setVgap(8);
 
+        // ComboBox per scegliere il team su cui operare.
         teamComboBox.setPromptText("Seleziona team");
         teamComboBox.setItems(controller.getTeams());
+        // ComboBox con i membri del team selezionato.
         employeeComboBox.setPromptText("Mittente");
         employeeComboBox.setItems(controller.getEmployees());
 
@@ -46,6 +52,7 @@ public class TeamChatView {
 
         Button refreshButton = new Button("Ricarica chat");
         header.add(refreshButton, 2, 0, 1, 2);
+        // Permette di ricaricare manualmente i messaggi della chat corrente.
         refreshButton.setOnAction(event -> {
             Team selected = teamComboBox.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -56,6 +63,7 @@ public class TeamChatView {
         root.setTop(header);
 
         messageListView.setItems(controller.getMessages());
+        // Mostra ciascun messaggio convertendolo in stringa.
         messageListView.setCellFactory(listView -> new ListCell<>() {
             @Override
             protected void updateItem(ChatMessage item, boolean empty) {
@@ -73,6 +81,7 @@ public class TeamChatView {
         messageArea.setWrapText(true);
 
         Button sendButton = new Button("Invia");
+        // Gestisce l'invio asincrono dei messaggi verso il server REST.
         sendButton.setOnAction(event -> {
             Team team = teamComboBox.getSelectionModel().getSelectedItem();
             Employee employee = employeeComboBox.getSelectionModel().getSelectedItem();
@@ -107,6 +116,7 @@ public class TeamChatView {
         messageArea.setPrefColumnCount(40);
         root.setBottom(composer);
 
+        // Aggiorna dinamicamente i membri del team quando cambia la selezione.
         teamComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTeam, newTeam) -> {
             if (newTeam != null) {
                 employeeComboBox.setItems(newTeam.getMembers());
@@ -119,10 +129,12 @@ public class TeamChatView {
     }
 
     public BorderPane getRoot() {
+        // Restituisce il nodo principale da incorporare nelle scene JavaFX.
         return root;
     }
 
     private void showAlert(String message) {
+        // Mostra un semplice popup informativo con il messaggio fornito.
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
         alert.setContentText(message);

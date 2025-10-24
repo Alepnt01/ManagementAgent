@@ -16,17 +16,23 @@ import javafx.scene.layout.VBox;
 
 import java.util.Optional;
 
+/**
+ * Vista JavaFX che consente l'invio di email dai dipendenti ai clienti.
+ */
 public class EmailView {
 
     private final VBox root = new VBox(12);
 
     public EmailView(CollaborationController controller) {
+        // Configura l'interfaccia grafica del modulo email.
         root.setPadding(new Insets(16));
 
         ComboBox<Employee> employeeComboBox = new ComboBox<>(controller.getEmployees());
+        // Permette di scegliere il dipendente mittente.
         employeeComboBox.setPromptText("Mittente");
 
         ComboBox<ClientContact> clientComboBox = new ComboBox<>(controller.getClients());
+        // Selettore del cliente destinatario.
         clientComboBox.setPromptText("Destinatario");
 
         TextField subjectField = new TextField();
@@ -52,6 +58,7 @@ public class EmailView {
 
         Button sendButton = new Button("Invia email");
         sendButton.setDefaultButton(true);
+        // Effettua la validazione e invia la richiesta al controller.
         sendButton.setOnAction(event -> {
             Employee employee = employeeComboBox.getSelectionModel().getSelectedItem();
             ClientContact client = clientComboBox.getSelectionModel().getSelectedItem();
@@ -80,8 +87,10 @@ public class EmailView {
                     .whenComplete((result, throwable) -> Platform.runLater(() -> {
                         sendButton.setDisable(false);
                         if (throwable != null) {
+                            // Mostra l'errore restituito dal server.
                             showAlert("Invio fallito: " + throwable.getMessage());
                         } else {
+                            // Conferma l'invio e pulisce i campi della form.
                             showAlert("Email inviata correttamente.");
                             subjectField.clear();
                             bodyArea.clear();
@@ -93,10 +102,12 @@ public class EmailView {
     }
 
     public VBox getRoot() {
+        // Restituisce il contenitore principale da inserire nella scena JavaFX.
         return root;
     }
 
     private void showAlert(String message) {
+        // Visualizza un alert informativo con il messaggio specificato.
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
         alert.setContentText(message);
