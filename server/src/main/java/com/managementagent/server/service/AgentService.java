@@ -49,6 +49,8 @@ public class AgentService {
         return CompletableFuture.supplyAsync(() -> agentDAO.findById(id).map(existing -> {
             existing.setCode(request.getCode());
             existing.setName(request.getName());
+            existing.setEmail(request.getEmail());
+            existing.setPhone(request.getPhone());
             existing.setRegion(request.getRegion());
             existing.setStatus(request.getStatus());
             Agent updated = agentDAO.update(id, existing);

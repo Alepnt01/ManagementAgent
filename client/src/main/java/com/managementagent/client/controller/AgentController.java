@@ -30,10 +30,12 @@ public class AgentController {
         apiClient.loadAgents().thenAccept(this::mapAndPopulate);
     }
 
-    public CompletableFuture<Void> createAgent(String code, String name, String region, String status) {
+    public CompletableFuture<Void> createAgent(String code, String name, String email, String phone, String region, String status) {
         AgentPayload payload = new AgentPayload();
         payload.setCode(code);
         payload.setName(name);
+        payload.setEmail(email);
+        payload.setPhone(phone);
         payload.setRegion(region);
         payload.setStatus(status);
         return apiClient.createAgent(payload)
@@ -44,6 +46,8 @@ public class AgentController {
         AgentPayload payload = new AgentPayload();
         payload.setCode(agent.getCode());
         payload.setName(agent.getName());
+        payload.setEmail(agent.getEmail());
+        payload.setPhone(agent.getPhone());
         payload.setRegion(agent.getRegion());
         payload.setStatus(agent.getStatus());
         return apiClient.updateAgent(agent.getId(), payload)
@@ -72,6 +76,8 @@ public class AgentController {
         agent.setId(payload.getId());
         agent.setCode(payload.getCode());
         agent.setName(payload.getName());
+        agent.setEmail(payload.getEmail());
+        agent.setPhone(payload.getPhone());
         agent.setRegion(payload.getRegion());
         agent.setStatus(payload.getStatus());
         return agent;

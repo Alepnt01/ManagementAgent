@@ -6,7 +6,7 @@ Suite composta da un server REST e da un client JavaFX per la gestione di agenti
 - Java 17+
 - Maven 3.9+
 - Un'istanza SQL Server raggiungibile (parametri configurabili in `server/src/main/resources/application.properties`)
-- Eseguire lo script `server/src/main/resources/schema.sql` per creare la tabella `agents`
+- Eseguire lo script `server/src/main/resources/schema.sql` per creare le tabelle `persons`, `agents`, `clients`, `services`, `contracts`, `invoices`, `payments` e `users`
 
 ## Avvio del server
 

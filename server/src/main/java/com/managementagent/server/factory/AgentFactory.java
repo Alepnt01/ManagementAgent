@@ -15,6 +15,8 @@ public class AgentFactory {
         Agent agent = new Agent();
         agent.setCode(request.getCode());
         agent.setName(request.getName());
+        agent.setEmail(request.getEmail());
+        agent.setPhone(request.getPhone());
         agent.setRegion(request.getRegion());
         agent.setStatus(request.getStatus());
         agent.setLastUpdate(LocalDateTime.now());

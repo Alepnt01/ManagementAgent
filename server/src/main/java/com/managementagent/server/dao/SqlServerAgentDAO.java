@@ -26,7 +26,9 @@ public class SqlServerAgentDAO implements AgentDAO {
 
     @Override
     public List<Agent> findAll() {
-        String sql = "SELECT id, code, name, region, status, last_update FROM agents ORDER BY id";
+        String sql = "SELECT a.person_id AS id, p.full_name AS name, p.email, p.phone, " +
+                "a.code, a.region, a.status, a.last_update " +
+                "FROM agents a JOIN persons p ON a.person_id = p.id ORDER BY a.person_id";
         List<Agent> agents = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -42,7 +44,9 @@ public class SqlServerAgentDAO implements AgentDAO {
 
     @Override
     public Optional<Agent> findById(long id) {
-        String sql = "SELECT id, code, name, region, status, last_update FROM agents WHERE id = ?";
+        String sql = "SELECT a.person_id AS id, p.full_name AS name, p.email, p.phone, " +
+                "a.code, a.region, a.status, a.last_update " +
+                "FROM agents a JOIN persons p ON a.person_id = p.id WHERE a.person_id = ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
@@ -59,21 +63,42 @@ public class SqlServerAgentDAO implements AgentDAO {
 
     @Override
     public Agent save(Agent agent) {
-        String sql = "INSERT INTO agents (code, name, region, status, last_update) VALUES (?, ?, ?, ?, ?)";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, agent.getCode());
-            statement.setString(2, agent.getName());
-            statement.setString(3, agent.getRegion());
-            statement.setString(4, agent.getStatus());
-            statement.setTimestamp(5, Timestamp.valueOf(agent.getLastUpdate()));
-            statement.executeUpdate();
-            try (ResultSet keys = statement.getGeneratedKeys()) {
-                if (keys.next()) {
-                    agent.setId(keys.getLong(1));
+        String insertPerson = "INSERT INTO persons (full_name, email, phone) VALUES (?, ?, ?)";
+        String insertAgent = "INSERT INTO agents (person_id, code, region, status, last_update) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement personStatement = connection.prepareStatement(insertPerson, Statement.RETURN_GENERATED_KEYS)) {
+                    personStatement.setString(1, agent.getName());
+                    personStatement.setString(2, agent.getEmail());
+                    personStatement.setString(3, agent.getPhone());
+                    personStatement.executeUpdate();
+                    try (ResultSet keys = personStatement.getGeneratedKeys()) {
+                        if (keys.next()) {
+                            agent.setId(keys.getLong(1));
+                        } else {
+                            throw new IllegalStateException("Unable to retrieve generated person identifier");
+                        }
+                    }
                 }
+
+                try (PreparedStatement agentStatement = connection.prepareStatement(insertAgent)) {
+                    agentStatement.setLong(1, agent.getId());
+                    agentStatement.setString(2, agent.getCode());
+                    agentStatement.setString(3, agent.getRegion());
+                    agentStatement.setString(4, agent.getStatus());
+                    agentStatement.setTimestamp(5, Timestamp.valueOf(agent.getLastUpdate()));
+                    agentStatement.executeUpdate();
+                }
+
+                connection.commit();
+                return agent;
+            } catch (Exception e) {
+                connection.rollback();
+                throw new IllegalStateException("Unable to save agent", e);
             }
-            return agent;
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException("Unable to save agent", e);
         }
@@ -81,19 +106,38 @@ public class SqlServerAgentDAO implements AgentDAO {
 
     @Override
     public Agent update(long id, Agent agent) {
-        String sql = "UPDATE agents SET code = ?, name = ?, region = ?, status = ?, last_update = ? WHERE id = ?";
+        String updatePerson = "UPDATE persons SET full_name = ?, email = ?, phone = ? WHERE id = ?";
+        String updateAgent = "UPDATE agents SET code = ?, region = ?, status = ?, last_update = ? WHERE person_id = ?";
         agent.setLastUpdate(LocalDateTime.now());
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, agent.getCode());
-            statement.setString(2, agent.getName());
-            statement.setString(3, agent.getRegion());
-            statement.setString(4, agent.getStatus());
-            statement.setTimestamp(5, Timestamp.valueOf(agent.getLastUpdate()));
-            statement.setLong(6, id);
-            statement.executeUpdate();
-            agent.setId(id);
-            return agent;
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement personStatement = connection.prepareStatement(updatePerson)) {
+                    personStatement.setString(1, agent.getName());
+                    personStatement.setString(2, agent.getEmail());
+                    personStatement.setString(3, agent.getPhone());
+                    personStatement.setLong(4, id);
+                    personStatement.executeUpdate();
+                }
+
+                try (PreparedStatement agentStatement = connection.prepareStatement(updateAgent)) {
+                    agentStatement.setString(1, agent.getCode());
+                    agentStatement.setString(2, agent.getRegion());
+                    agentStatement.setString(3, agent.getStatus());
+                    agentStatement.setTimestamp(4, Timestamp.valueOf(agent.getLastUpdate()));
+                    agentStatement.setLong(5, id);
+                    agentStatement.executeUpdate();
+                }
+
+                connection.commit();
+                agent.setId(id);
+                return agent;
+            } catch (Exception e) {
+                connection.rollback();
+                throw new IllegalStateException("Unable to update agent with id " + id, e);
+            }
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException("Unable to update agent with id " + id, e);
         }
@@ -101,7 +145,7 @@ public class SqlServerAgentDAO implements AgentDAO {
 
     @Override
     public void delete(long id) {
-        String sql = "DELETE FROM agents WHERE id = ?";
+        String sql = "DELETE FROM persons WHERE id = ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
@@ -114,8 +158,10 @@ public class SqlServerAgentDAO implements AgentDAO {
     private Agent mapRow(ResultSet rs) throws Exception {
         Agent agent = new Agent();
         agent.setId(rs.getLong("id"));
-        agent.setCode(rs.getString("code"));
         agent.setName(rs.getString("name"));
+        agent.setEmail(rs.getString("email"));
+        agent.setPhone(rs.getString("phone"));
+        agent.setCode(rs.getString("code"));
         agent.setRegion(rs.getString("region"));
         agent.setStatus(rs.getString("status"));
         Timestamp timestamp = rs.getTimestamp("last_update");

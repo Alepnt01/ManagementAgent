@@ -12,6 +12,8 @@ public class Agent {
     private final LongProperty id = new SimpleLongProperty();
     private final StringProperty code = new SimpleStringProperty();
     private final StringProperty name = new SimpleStringProperty();
+    private final StringProperty email = new SimpleStringProperty();
+    private final StringProperty phone = new SimpleStringProperty();
     private final StringProperty region = new SimpleStringProperty();
     private final StringProperty status = new SimpleStringProperty();
 
@@ -49,6 +51,30 @@ public class Agent {
 
     public StringProperty nameProperty() {
         return name;
+    }
+
+    public String getEmail() {
+        return email.get();
+    }
+
+    public void setEmail(String email) {
+        this.email.set(email);
+    }
+
+    public StringProperty emailProperty() {
+        return email;
+    }
+
+    public String getPhone() {
+        return phone.get();
+    }
+
+    public void setPhone(String phone) {
+        this.phone.set(phone);
+    }
+
+    public StringProperty phoneProperty() {
+        return phone;
     }
 
     public String getRegion() {

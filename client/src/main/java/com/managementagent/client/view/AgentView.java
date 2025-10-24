@@ -18,6 +18,8 @@ public class AgentView {
     private final TableView<Agent> tableView = new TableView<>();
     private final TextField codeField = new TextField();
     private final TextField nameField = new TextField();
+    private final TextField emailField = new TextField();
+    private final TextField phoneField = new TextField();
     private final TextField regionField = new TextField();
     private final ComboBox<String> statusBox = new ComboBox<>();
 
@@ -40,13 +42,19 @@ public class AgentView {
         TableColumn<Agent, String> nameColumn = new TableColumn<>("Nome");
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
 
+        TableColumn<Agent, String> emailColumn = new TableColumn<>("Email");
+        emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailProperty());
+
+        TableColumn<Agent, String> phoneColumn = new TableColumn<>("Telefono");
+        phoneColumn.setCellValueFactory(cellData -> cellData.getValue().phoneProperty());
+
         TableColumn<Agent, String> regionColumn = new TableColumn<>("Regione");
         regionColumn.setCellValueFactory(cellData -> cellData.getValue().regionProperty());
 
         TableColumn<Agent, String> statusColumn = new TableColumn<>("Stato");
         statusColumn.setCellValueFactory(cellData -> cellData.getValue().statusProperty());
 
-        tableView.getColumns().addAll(idColumn, codeColumn, nameColumn, regionColumn, statusColumn);
+        tableView.getColumns().addAll(idColumn, codeColumn, nameColumn, emailColumn, phoneColumn, regionColumn, statusColumn);
         tableView.setItems(controller.getAgents());
 
         root.setCenter(tableView);
@@ -64,10 +72,14 @@ public class AgentView {
         form.add(codeField, 1, 0);
         form.add(new Label("Nome"), 0, 1);
         form.add(nameField, 1, 1);
-        form.add(new Label("Regione"), 0, 2);
-        form.add(regionField, 1, 2);
-        form.add(new Label("Stato"), 0, 3);
-        form.add(statusBox, 1, 3);
+        form.add(new Label("Email"), 0, 2);
+        form.add(emailField, 1, 2);
+        form.add(new Label("Telefono"), 0, 3);
+        form.add(phoneField, 1, 3);
+        form.add(new Label("Regione"), 0, 4);
+        form.add(regionField, 1, 4);
+        form.add(new Label("Stato"), 0, 5);
+        form.add(statusBox, 1, 5);
 
         HBox buttons = new HBox(8);
         Button addButton = new Button("Aggiungi");
@@ -81,6 +93,8 @@ public class AgentView {
         addButton.setOnAction(event -> controller.createAgent(
                 codeField.getText(),
                 nameField.getText(),
+                emailField.getText(),
+                phoneField.getText(),
                 regionField.getText(),
                 statusBox.getSelectionModel().getSelectedItem()
         ));
@@ -88,6 +102,12 @@ public class AgentView {
         updateButton.setOnAction(event -> {
             Agent selected = tableView.getSelectionModel().getSelectedItem();
             if (selected != null) {
+                selected.setCode(codeField.getText());
+                selected.setName(nameField.getText());
+                selected.setEmail(emailField.getText());
+                selected.setPhone(phoneField.getText());
+                selected.setRegion(regionField.getText());
+                selected.setStatus(statusBox.getSelectionModel().getSelectedItem());
                 controller.updateAgent(selected);
             }
         });
@@ -105,12 +125,14 @@ public class AgentView {
             if (newVal != null) {
                 codeField.setText(newVal.getCode());
                 nameField.setText(newVal.getName());
+                emailField.setText(newVal.getEmail());
+                phoneField.setText(newVal.getPhone());
                 regionField.setText(newVal.getRegion());
                 statusBox.getSelectionModel().select(newVal.getStatus());
             }
         });
 
-        form.add(buttons, 0, 4, 2, 1);
+        form.add(buttons, 0, 6, 2, 1);
         root.setBottom(form);
     }
 }
