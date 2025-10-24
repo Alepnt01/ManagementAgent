@@ -22,6 +22,36 @@ CREATE TABLE IF NOT EXISTS agents (
     FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS employees (
+    person_id BIGINT PRIMARY KEY,
+    job_title VARCHAR(100),
+    FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS teams (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    description VARCHAR(300)
+);
+
+CREATE TABLE IF NOT EXISTS team_members (
+    team_id BIGINT NOT NULL,
+    employee_id BIGINT NOT NULL,
+    PRIMARY KEY (team_id, employee_id),
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES employees(person_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS team_chat_messages (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    sender_id BIGINT NOT NULL,
+    message NVARCHAR(1000) NOT NULL,
+    sent_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES employees(person_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS services (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -69,4 +99,15 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL,
     active BIT NOT NULL DEFAULT 1,
     created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE TABLE IF NOT EXISTS email_messages (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    client_id BIGINT NOT NULL,
+    subject VARCHAR(200) NOT NULL,
+    body NVARCHAR(2000) NOT NULL,
+    sent_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    FOREIGN KEY (employee_id) REFERENCES employees(person_id) ON DELETE CASCADE,
+    FOREIGN KEY (client_id) REFERENCES clients(person_id) ON DELETE CASCADE
 );

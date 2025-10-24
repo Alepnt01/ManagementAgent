@@ -41,4 +41,36 @@ public final class ServerSettings {
     public static String getDatabasePassword() {
         return PROPERTIES.getProperty("db.password");
     }
+
+    public static String getDatabaseAuthentication() {
+        return PROPERTIES.getProperty("db.authentication", "sql");
+    }
+
+    public static String getSqlJdbcAuthLibrary() {
+        return PROPERTIES.getProperty("db.sqljdbc.auth.dll");
+    }
+
+    public static String getMailHost() {
+        return PROPERTIES.getProperty("mail.smtp.host");
+    }
+
+    public static int getMailPort() {
+        return Integer.parseInt(PROPERTIES.getProperty("mail.smtp.port", "25"));
+    }
+
+    public static boolean isMailStartTlsEnabled() {
+        return Boolean.parseBoolean(PROPERTIES.getProperty("mail.smtp.starttls", "false"));
+    }
+
+    public static String getMailUsername() {
+        return PROPERTIES.getProperty("mail.smtp.username");
+    }
+
+    public static String getMailPassword() {
+        return PROPERTIES.getProperty("mail.smtp.password");
+    }
+
+    public static String getMailFromAddress() {
+        return PROPERTIES.getProperty("mail.smtp.from", PROPERTIES.getProperty("mail.smtp.username"));
+    }
 }

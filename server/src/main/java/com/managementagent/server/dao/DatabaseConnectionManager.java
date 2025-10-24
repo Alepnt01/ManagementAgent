@@ -18,8 +18,23 @@ public final class DatabaseConnectionManager {
     private DatabaseConnectionManager() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(ServerSettings.getDatabaseUrl());
-        config.setUsername(ServerSettings.getDatabaseUsername());
-        config.setPassword(ServerSettings.getDatabasePassword());
+        String authentication = ServerSettings.getDatabaseAuthentication();
+        if ("windows".equalsIgnoreCase(authentication)) {
+            config.addDataSourceProperty("integratedSecurity", "true");
+            String dllPath = ServerSettings.getSqlJdbcAuthLibrary();
+            if (dllPath != null && !dllPath.isBlank()) {
+                System.setProperty("java.library.path", dllPath);
+            }
+        } else {
+            String username = ServerSettings.getDatabaseUsername();
+            String password = ServerSettings.getDatabasePassword();
+            if (username != null && !username.isBlank()) {
+                config.setUsername(username);
+            }
+            if (password != null && !password.isBlank()) {
+                config.setPassword(password);
+            }
+        }
         config.setDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         config.setMaximumPoolSize(10);
         config.setPoolName("ManagementAgentPool");
