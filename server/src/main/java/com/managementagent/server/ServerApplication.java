@@ -3,6 +3,7 @@ package com.managementagent.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.managementagent.server.controller.AgentController;
+import com.managementagent.server.controller.AuthController;
 import com.managementagent.server.controller.CollaborationController;
 import com.managementagent.server.controller.MailController;
 import com.managementagent.server.dao.AgentDAO;
@@ -12,9 +13,11 @@ import com.managementagent.server.dao.SqlServerCollaborationDAO;
 import com.managementagent.server.factory.AgentFactory;
 import com.managementagent.server.observer.AgentEventPublisher;
 import com.managementagent.server.service.AgentService;
+import com.managementagent.server.service.AuthService;
 import com.managementagent.server.service.MailService;
 import com.managementagent.server.service.TeamService;
 import io.javalin.Javalin;
+import io.javalin.http.UnauthorizedResponse;
 
 /**
  * Punto di ingresso per il server Management Agent.
@@ -49,6 +52,10 @@ public class ServerApplication {
         private final TeamService teamService = new TeamService(collaborationDAO);
         // Servizio che orchestra l'invio delle email ai clienti.
         private final MailService mailService = new MailService(collaborationDAO);
+        // Servizio di autenticazione basato su credenziali statiche.
+        private final AuthService authService = new AuthService(ServerSettings.getAuthUsers());
+        // Controller REST per l'autenticazione degli utenti.
+        private final AuthController authController = new AuthController(authService, objectMapper);
         // Controller REST per la gestione degli agenti.
         private final AgentController agentController = new AgentController(agentService, objectMapper);
         // Controller REST per chat e collaborazione tra dipendenti.
@@ -64,7 +71,30 @@ public class ServerApplication {
             // Creo l'istanza di Javalin abilitando il CORS verso qualsiasi origine per il client JavaFX.
             Javalin app = Javalin.create(config -> config.plugins.enableCors(cors -> cors.add(it -> it.anyHost())));
 
+            // Intercetto le richieste per applicare l'autenticazione basata su token.
+            app.before(ctx -> {
+                if (!authService.isAuthenticationEnabled()) {
+                    return;
+                }
+                if ("OPTIONS".equalsIgnoreCase(ctx.method())) {
+                    return;
+                }
+                String path = ctx.path();
+                if (path.startsWith("/auth/login")) {
+                    return;
+                }
+                String authorization = ctx.header("Authorization");
+                if (authorization == null || !authorization.startsWith("Bearer ")) {
+                    throw new UnauthorizedResponse("Missing Authorization header");
+                }
+                String token = authorization.substring("Bearer ".length());
+                if (!authService.isTokenValid(token)) {
+                    throw new UnauthorizedResponse("Invalid or expired token");
+                }
+            });
+
             // Registro le rotte REST di ciascun controller.
+            authController.registerRoutes(app);
             agentController.registerRoutes(app);
             collaborationController.registerRoutes(app);
             mailController.registerRoutes(app);

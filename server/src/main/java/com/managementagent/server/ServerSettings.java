@@ -2,6 +2,9 @@ package com.managementagent.server;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -87,5 +90,26 @@ public final class ServerSettings {
     public static String getMailFromAddress() {
         // Indirizzo mittente predefinito per le email in uscita.
         return PROPERTIES.getProperty("mail.smtp.from", PROPERTIES.getProperty("mail.smtp.username"));
+    }
+
+    public static Map<String, String> getAuthUsers() {
+        // Mappa di coppie username:password definite nella configurazione.
+        String raw = PROPERTIES.getProperty("auth.users", "").trim();
+        if (raw.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> credentials = new HashMap<>();
+        String[] entries = raw.split(",");
+        for (String entry : entries) {
+            String trimmed = entry.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String[] parts = trimmed.split(":", 2);
+            if (parts.length == 2 && !parts[0].isBlank()) {
+                credentials.put(parts[0].trim(), parts[1]);
+            }
+        }
+        return Collections.unmodifiableMap(credentials);
     }
 }
