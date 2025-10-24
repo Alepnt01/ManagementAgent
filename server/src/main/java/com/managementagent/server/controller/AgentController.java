@@ -28,36 +28,36 @@ public class AgentController {
     }
 
     private void getAllAgents(Context ctx) {
-        agentService.getAllAgentsAsync()
-                .thenAccept(agents -> ctx.json(agents))
-                .exceptionally(throwable -> handleError(ctx, throwable));
+        ctx.future(agentService.getAllAgentsAsync()
+                .thenAccept(ctx::json)
+                .exceptionally(throwable -> handleError(ctx, throwable)));
     }
 
     private void getAgentById(Context ctx) {
         long id = Long.parseLong(ctx.pathParam("id"));
-        agentService.getAgentByIdAsync(id)
+        ctx.future(agentService.getAgentByIdAsync(id)
                 .thenAccept(optional -> optional.ifPresentOrElse(ctx::json, () -> ctx.status(404)))
-                .exceptionally(throwable -> handleError(ctx, throwable));
+                .exceptionally(throwable -> handleError(ctx, throwable)));
     }
 
     private void createAgent(Context ctx) {
         AgentRequest request = readBody(ctx, AgentRequest.class);
-        agentService.createAgentAsync(request)
+        ctx.future(agentService.createAgentAsync(request)
                 .thenAccept(agent -> ctx.status(201).json(agent))
-                .exceptionally(throwable -> handleError(ctx, throwable));
+                .exceptionally(throwable -> handleError(ctx, throwable)));
     }
 
     private void updateAgent(Context ctx) {
         long id = Long.parseLong(ctx.pathParam("id"));
         AgentRequest request = readBody(ctx, AgentRequest.class);
-        agentService.updateAgentAsync(id, request)
+        ctx.future(agentService.updateAgentAsync(id, request)
                 .thenAccept(optional -> optional.ifPresentOrElse(ctx::json, () -> ctx.status(404)))
-                .exceptionally(throwable -> handleError(ctx, throwable));
+                .exceptionally(throwable -> handleError(ctx, throwable)));
     }
 
     private void deleteAgent(Context ctx) {
         long id = Long.parseLong(ctx.pathParam("id"));
-        agentService.deleteAgentAsync(id)
+        ctx.future(agentService.deleteAgentAsync(id)
                 .thenAccept(deleted -> {
                     if (deleted) {
                         ctx.status(204);
@@ -65,7 +65,7 @@ public class AgentController {
                         ctx.status(404);
                     }
                 })
-                .exceptionally(throwable -> handleError(ctx, throwable));
+                .exceptionally(throwable -> handleError(ctx, throwable)));
     }
 
     private <T> T readBody(Context ctx, Class<T> clazz) {
